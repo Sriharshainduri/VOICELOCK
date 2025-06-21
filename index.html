@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cyber Defense Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <style>
+    body {
+      background: #0a0f1a url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"%3E%3Cpath d="M0 0h100v100H0z" fill="none" stroke="%233b82f6" stroke-width="0.5" opacity="0.1"/%3E%3Crect x="10" y="10" width="80" height="80" fill="none" stroke="%233b82f6" stroke-width="0.5" opacity="0.1"/%3E%3C/svg%3E') repeat;
+      background-size: 20px 20px;
+      color: #d1d5db;
+      overflow-x: hidden;
+      perspective: 1000px;
+      min-height: 100vh;
+    }
+    .holographic {
+      background: rgba(59, 130, 246, 0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.2), inset 0 0 10px rgba(59, 130, 246, 0.1);
+    }
+    .glow {
+      text-shadow: 0 0 10px #3b82f6, 0 0 20px #22d3ee;
+      box-shadow: 0 0 10px #3b82f6, 0 0 20px #22d3ee inset;
+    }
+    .lock-animation {
+      animation: lockPulse 2s infinite;
+    }
+    @keyframes lockPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    .node-pulse {
+      animation: nodePulse 1.5s infinite;
+    }
+    @keyframes nodePulse {
+      0%, 100% { box-shadow: 0 0 5px #3b82f6; }
+      50% { box-shadow: 0 0 15px #22d3ee; }
+    }
+    .path-animation {
+      animation: pathFlow 3s infinite linear;
+    }
+    @keyframes pathFlow {
+      0% { stroke-dashoffset: 100; }
+      100% { stroke-dashoffset: 0; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 font-sans relative">
+  <div class="holographic rounded-2xl max-w-4xl w-full p-8" style="transform-style: preserve-3d; min-height: 80vh;">
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <h1 class="text-5xl font-extrabold text-white glow mb-2">VoiceLock</h1>
+      <p class="text-xl text-blue-200 mb-4">Advanced Voice-Encrypted Security</p>
+    </div>
+
+    <!-- Network Pathways and Nodes -->
+    <svg class="absolute inset-0 w-full h-full pointer-events-none" style="z-index: -1; top: 0; left: 0;">
+      <path d="M50 20 L80 50 L50 80 L20 50 Z" fill="none" stroke="#3b82f6" stroke-width="2" stroke-dasharray="100" class="path-animation" />
+      <circle cx="50" cy="20" r="5" fill="#22d3ee" class="node-pulse" />
+      <circle cx="80" cy="50" r="5" fill="#22d3ee" class="node-pulse" />
+      <circle cx="50" cy="80" r="5" fill="#22d3ee" class="node-pulse" />
+      <circle cx="20" cy="50" r="5" fill="#22d3ee" class="node-pulse" />
+    </svg>
+
+    <!-- Voice Passphrase Section -->
+    <div class="holographic rounded-xl p-6 mb-6 relative overflow-hidden">
+      <div class="flex items-center gap-2 mb-4">
+        <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+        <h2 class="text-2xl font-semibold text-white glow">Voice Authentication</h2>
+      </div>
+      <p class="text-sm text-blue-300 mb-4">Record a unique voice passphrase for secure access.</p>
+      <div class="flex flex-col items-center">
+        <button id="startBtn" class="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white px-6 py-3 rounded-full font-medium shadow-lg glow transition-all hover:scale-105 mb-2" aria-label="Start voice recording">
+          <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+          Start Recording
+        </button>
+        <button id="stopBtn" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-full font-medium shadow-lg glow transition-all hover:scale-105 disabled:opacity-50 mb-2" disabled aria-label="Stop voice recording">
+          <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          Stop Recording
+        </button>
+        <div id="voiceStatus" class="text-sm text-blue-300" aria-live="polite">No passphrase recorded.</div>
+        <div id="lockIcon" class="absolute top-2 right-2 w-10 h-10 lock-animation">
+          <svg class="w-full h-full text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0-1.1-.9-2-2-2s-2 .9-2 2v2h4v-2zm0 0c0-1.1.9-2 2-2s2 .9 2 2v2h-4v-2zm-2 4h4m-8 2h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- File Upload Section -->
+    <div class="mb-6">
+      <label class="block font-medium text-white mb-2">Upload Secure File</label>
+      <div class="relative group">
+        <input type="file" id="fileInput" class="block w-full border border-blue-900/30 rounded-lg px-4 py-3 bg-blue-900/10 text-white cursor-pointer hover:bg-blue-900/20 transition-colors" accept="application/pdf,.vlenc" aria-label="Upload PDF or encrypted file" />
+        <div id="dropZone" class="absolute inset-0 flex items-center justify-center text-blue-300/60 text-sm pointer-events-none transition-opacity opacity-0 group-hover:opacity-100">
+          Drag & Drop PDF or .vlenc
+        </div>
+      </div>
+      <div id="shieldIcon" class="absolute -top-6 right-4 w-12 h-12">
+        <svg class="w-full h-full text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l-6.713-6.713a1 1 0 010-1.414l9-9a1 1 0 011.414 0l9 9a1 1 0 010 1.414l-6.713 6.713a1 1 0 01-1.414 0l-4.95-4.95a1 1 0 010-1.414z"></path><text x="12" y="12" font-family="Arial" font-size="8" fill="#3b82f6" text-anchor="middle">0101</text></svg>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <button id="encryptBtn" class="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white px-6 py-3 rounded-lg font-medium shadow-lg glow transition-all hover:scale-105 flex items-center justify-center gap-2" aria-label="Encrypt uploaded file">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0-1.1-.9-2-2-2s-2 .9-2 2v2h4v-2zm0 0c0-1.1.9-2 2-2s2 .9 2 2v2h-4v-2zm-2 4h4m-8 2h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+        Encrypt
+      </button>
+      <button id="decryptBtn" class="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white px-6 py-3 rounded-lg font-medium shadow-lg glow transition-all hover:scale-105 flex items-center justify-center gap-2" aria-label="Decrypt uploaded file">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg>
+        Decrypt
+      </button>
+    </div>
+
+    <!-- Status Notification -->
+    <div id="status" class="text-center text-sm text-blue-200 p-3 rounded-lg bg-blue-900/50 holographic" aria-live="polite"></div>
+
+    <!-- How It Works -->
+    <div class="holographic rounded-xl p-6 mt-8">
+      <div class="flex items-center gap-2 mb-4">
+        <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <h2 class="text-2xl font-semibold text-white glow">Security Protocol</h2>
+      </div>
+      <ol class="list-decimal ml-5 text-blue-300 text-sm space-y-2">
+        <li>Record a voice passphrase.</li>
+        <li>Upload a file for encryption.</li>
+        <li>Secure with AES-256.</li>
+        <li>Unlock with matching voice.</li>
+      </ol>
+    </div>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const encryptBtn = document.getElementById('encryptBtn');
+    const decryptBtn = document.getElementById('decryptBtn');
+    const status = document.getElementById('status');
+    const voiceStatus = document.getElementById('voiceStatus');
+
+    let selectedFile = null;
+    let storedVoicePassword = null;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let stream = null;
+
+    function setStatus(message) {
+      status.textContent = message;
+      setTimeout(() => (status.textContent = ''), 5000);
+    }
+
+    fileInput.addEventListener('change', () => {
+      selectedFile = fileInput.files[0];
+    });
+
+    startBtn.addEventListener('click', async () => {
+      try {
+        audioChunks = [];
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = event => {
+          if (event.data.size > 0) audioChunks.push(event.data);
+        };
+        mediaRecorder.onstop = async () => {
+          const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+          storedVoicePassword = await generateVoicePassword(audioBlob);
+          voiceStatus.textContent = 'Passphrase recorded.';
+          stream.getTracks().forEach(track => track.stop());
+          stream = null;
+        };
+        mediaRecorder.start();
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        voiceStatus.textContent = 'Recording... speak now.';
+      } catch (err) {
+        setStatus('Failed to access microphone: ' + err.message);
+        startBtn.disabled = false;
+      }
+    });
+
+    stopBtn.addEventListener('click', () => {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+    });
+
+    async function generateVoicePassword(blob) {
+      const arrayBuffer = await blob.arrayBuffer();
+      const wordArray = CryptoJS.lib.WordArray.create(new Uint8Array(arrayBuffer));
+      const hash = CryptoJS.SHA256(wordArray);
+      return hash.toString(CryptoJS.enc.Hex);
+    }
+
+    encryptBtn.addEventListener('click', async () => {
+      encryptBtn.disabled = true;
+      try {
+        if (!selectedFile || !storedVoicePassword) {
+          setStatus('Select a file and record voice.');
+          return;
+        }
+        if (!selectedFile.type.includes('pdf')) {
+          setStatus('Please select a PDF file.');
+          return;
+        }
+        const buffer = await selectedFile.arrayBuffer();
+        const wordArray = CryptoJS.lib.WordArray.create(new Uint8Array(buffer));
+        const encrypted = CryptoJS.AES.encrypt(wordArray, storedVoicePassword, {
+          mode: CryptoJS.mode.CBC,
+          padding: CryptoJS.pad.Pkcs7
+        }).toString();
+        localStorage.setItem('voiceLockPassword', storedVoicePassword); // Security note: Consider removing for production
+        downloadBlob(new Blob([encrypted], { type: 'text/plain' }), selectedFile.name + '.vlenc');
+        setStatus('Encryption successful.');
+      } catch (err) {
+        setStatus('Encryption failed: ' + err.message);
+      } finally {
+        encryptBtn.disabled = false;
+      }
+    });
+
+    decryptBtn.addEventListener('click', async () => {
+      decryptBtn.disabled = true;
+      try {
+        if (!selectedFile || !selectedFile.name.endsWith('.vlenc')) {
+          setStatus('Select a valid encrypted file (.vlenc).');
+          return;
+        }
+        const encryptedText = await selectedFile.text();
+        const savedPassword = localStorage.getItem('voiceLockPassword');
+        if (!savedPassword) {
+          setStatus('No voice password found. Encrypt a file first.');
+          return;
+        }
+        const decrypted = CryptoJS.AES.decrypt(encryptedText, savedPassword);
+        if (decrypted.sigBytes <= 0) throw new Error('Empty or invalid decryption.');
+        const byteArray = new Uint8Array(
+          decrypted.words.slice(0, Math.ceil(decrypted.sigBytes / 4)).map(word => [
+            (word >> 24) & 0xff,
+            (word >> 16) & 0xff,
+            (word >> 8) & 0xff,
+            word & 0xff
+          ]).flat()
+        ).slice(0, decrypted.sigBytes);
+        const pdfHeader = new TextDecoder().decode(byteArray.slice(0, 4));
+        if (pdfHeader !== '%PDF') throw new Error('Invalid PDF header.');
+        downloadBlob(new Blob([byteArray], { type: 'application/pdf' }), selectedFile.name.replace('.vlenc', '_decrypted.pdf'));
+        setStatus('Decryption successful.');
+      } catch (err) {
+        setStatus('Decryption failed: ' + err.message);
+      } finally {
+        decryptBtn.disabled = false;
+      }
+    });
+
+    function downloadBlob(blob, name) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
